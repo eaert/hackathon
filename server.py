@@ -1,12 +1,9 @@
 import socket
 import time
-import scapy.all as scap
 import struct
 
 HOST = '172.1.0.115'
 PORT = 13117
-
-scap.sniff
 
 # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 #     s.bind((HOST, PORT))
@@ -40,17 +37,31 @@ while True:
 
 class GameServer:
 
-    def GameServer(self):
-        self.gameServer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+    def __init__(self):
+        self.gameServerUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 
-        self.gameServer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        self.gameServerUDP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 
         # Enable broadcasting mode
-        self.gameServer.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        self.gameServerUDP.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+
+        self.broadcast(1,2,3)
+
+        self.gameServerTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
+        self.gameServerTCP.bind((HOST, PORT))
+        self.gameServerTCP.listen()
+
+        self.TCP_Connection()
 
     def broadcast(self, message, host, port):
         print('Server started, listening on IP address {}'.format(HOST))
         while True:
-            self.gameServer.sendto(message, (HOST, PORT))
+            self.gameServerUDP.sendto(message, (HOST, PORT))
             time.sleep(1)
+
+
+    def TCP_Connection(self):
+        self.gameServerTCP.accept()
+
+        
     
