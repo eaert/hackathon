@@ -1,4 +1,5 @@
 import socket
+import time
 
 HOST = '172.1.0.115'
 PORT = 13117
@@ -32,32 +33,30 @@ class GameClient:
 
         self.gameClientUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 
-        self.gameClientUDP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-
-        # Enable broadcasting mode
-        self.gameClientUDP.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-
         self.gameClientUDP.bind(('', 13117))
 
-        self.gameClientTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
+        self.gameClientTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         self.LookingForGame()
 
     def LookingForGame(self):
-        self.gameClientTCP.bind((self.IP, self.Port))
+        # self.gameClientTCP.bind((self.IP, self.Port))
         print("Client started, listening for offer requests...")
         while True:
             data, addr = self.gameClientUDP.recvfrom(20)
-            message = data.decode()
-            serverPort = message[13:]
+            try:
+                message = data.decode()
+                serverPort = message[13:]
 
-            #checking message
-            if message[:10] != '0xfeedbeef':
-                continue
+                #checking message
+                if message[:10] != '0xfeedbeef':
+                    continue
 
-            print("Received offer from %s, attempting to connect...", addr)
-            # Data is good, moving to next Level
-            self.ConnectingToGame(addr, serverPort)
+                print("Received offer from %s, attempting to connect...", addr[0])
+                # Data is good, moving to next Level
+                self.ConnectingToGame(addr[0], int(serverPort))
+            except Exception as e:
+                print(e)
             
 
     def ConnectingToGame(self, addr, gamePort):
@@ -65,6 +64,8 @@ class GameClient:
         self.PlayGame(connection)
 
     def PlayGame(self, opponent):
-        pass
+        stop_time = time.time() + 10
+        while time.time() < stop_time:
+            pass
 
 GameClient(HOST, PORT)

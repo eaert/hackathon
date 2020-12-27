@@ -1,6 +1,7 @@
 import socket
 import time
 import struct
+import threading
 
 HOST = '172.1.0.115'
 PORT = 2115
@@ -48,13 +49,19 @@ class GameServer:
         # Enable broadcasting mode
         self.gameServerUDP.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
-        self.broadcast(self.IP, self.Port)
-
-        self.gameServerTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
+        self.gameServerTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.gameServerTCP.bind((HOST, PORT))
-        self.gameServerTCP.listen()
 
-        self.TCP_Connection()
+        tB = threading.Thread(target=self.broadcast, args=(self.IP, self.Port))
+
+        tC = threading.Thread(target=self.TCP_Connection, args=())
+
+        tB.start()
+        tC.start()
+
+        tB.join()
+        tC.join()
+
 
     def broadcast(self, host, port):
         print('Server started, listening on IP address {}'.format(HOST))
@@ -65,7 +72,11 @@ class GameServer:
 
 
     def TCP_Connection(self):
-        self.gameServerTCP.accept()
+        try:
+            self.gameServerTCP.listen()
+            client, addr = self.gameServerTCP.accept()
+        except Exception as e:
+            print(e)
 
 GameServer(HOST, PORT)
         
