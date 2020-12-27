@@ -60,10 +60,12 @@ class GameClient:
             
 
     def ConnectingToGame(self, addr, gamePort):
-        connection = self.gameClientTCP.connect((addr, gamePort))
-        self.PlayGame(connection)
+        self.gameClientTCP.connect((addr, gamePort))
+        self.PlayGame()
+        self.gameClientTCP.close()
 
-    def PlayGame(self, opponent):
+
+    def PlayGame(self):
         stop_time = time.time() + 10
         while time.time() < stop_time:
             pass

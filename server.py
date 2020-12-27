@@ -72,11 +72,12 @@ class GameServer:
 
 
     def TCP_Connection(self):
-        try:
-            self.gameServerTCP.listen()
-            client, addr = self.gameServerTCP.accept()
-        except Exception as e:
-            print(e)
+        while True:
+            try:
+                self.gameServerTCP.listen()
+                client, addr = self.gameServerTCP.accept()
+            except Exception as e:
+                print(e)
 
 GameServer(HOST, PORT)
         
