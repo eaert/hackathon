@@ -1,5 +1,6 @@
 import socket
 import time
+import getch
 
 HOST = '172.1.0.115'
 PORT = 13117
@@ -69,9 +70,11 @@ class GameClient:
 
 
     def PlayGame(self):
+        numberOfKeys = 0
         stop_time = time.time() + 10
         while time.time() < stop_time:
-            pass
+            char = getch.getch()
+            self.gameClientTCP.sendall(char.encode())
 
 
 GameClient(HOST, PORT)

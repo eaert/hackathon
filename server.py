@@ -76,9 +76,25 @@ class GameServer:
             try:
                 self.gameServerTCP.listen()
                 client, addr = self.gameServerTCP.accept()
+                teamNameEncoded, clientAddr  = client.recvfrom(1024)
+                teamNameDecoded = teamNameEncoded.decode()
+                print(teamNameEncoded)
+                a = ''
+                stop_time = time.time() + 10
+                while time.time() < stop_time:
+                    keyPress, clientAddr  = client.recvfrom(1024)
+                    a += keyPress.decode()
 
             except Exception as e:
                 print(e)
+
+    def StartGame(self):
+        stop_time = time.time() + 1000
+        while time.time() < stop_time:
+            teamNameEncoded, clientAddr  = client.recvfrom(1024)
+
+
+    
 
 GameServer(HOST, PORT)
         
