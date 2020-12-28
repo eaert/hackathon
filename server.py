@@ -67,7 +67,7 @@ class GameServer:
         print('Server started, listening on IP address {}'.format(HOST))
         while True:
             message = '0xfeedbeef0x2'+str(self.Port)
-            self.gameServerUDP.sendto(bytes(message, 'utf8'), (HOST, 13117))
+            self.gameServerUDP.sendto(bytes(message, 'utf8'), ( '172.1.0', 13117))
             time.sleep(1)
 
 
@@ -76,6 +76,7 @@ class GameServer:
             try:
                 self.gameServerTCP.listen()
                 client, addr = self.gameServerTCP.accept()
+
             except Exception as e:
                 print(e)
 

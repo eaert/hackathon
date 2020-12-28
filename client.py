@@ -27,6 +27,8 @@ class GameClient:
 
     def __init__(self, IP, Port):
 
+        self.teamName = 'The A-Team'
+
         self.IP = IP
 
         self.Port = Port
@@ -61,6 +63,7 @@ class GameClient:
 
     def ConnectingToGame(self, addr, gamePort):
         self.gameClientTCP.connect((addr, gamePort))
+        self.gameClientTCP.sendall((self.teamName + '\n').encode())
         self.PlayGame()
         self.gameClientTCP.close()
 
@@ -69,5 +72,6 @@ class GameClient:
         stop_time = time.time() + 10
         while time.time() < stop_time:
             pass
+
 
 GameClient(HOST, PORT)
