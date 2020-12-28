@@ -1,5 +1,6 @@
 import socket
 import time
+import struct
 import getch
 
 HOST = '172.1.0.115'
@@ -48,25 +49,25 @@ class GameClient:
         while True:
             data, addr = self.gameClientUDP.recvfrom(20)
             try:
-                message = data.decode()
-                serverPort = message[13:]
+                message = struct.unpack('IbH', data)
+                serverPort = message[2]
 
                 #checking message
-                if message[:10] != '0xfeedbeef':
+                if message[0] != 0xfeedbeef:
                     continue
 
                 print("Received offer from %s, attempting to connect...", addr[0])
                 # Data is good, moving to next Level
                 self.ConnectingToGame(addr[0], int(serverPort))
             except Exception as e:
-                print(e)
+                pass
             
 
     def ConnectingToGame(self, addr, gamePort):
         self.gameClientTCP.connect((addr, gamePort))
         self.gameClientTCP.sendall((self.teamName + '\n').encode())
         self.PlayGame()
-        self.gameClientTCP.close()
+        self.gameClientTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
     def PlayGame(self):

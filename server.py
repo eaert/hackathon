@@ -66,27 +66,33 @@ class GameServer:
     def broadcast(self, host, port):
         print('Server started, listening on IP address {}'.format(HOST))
         while True:
-            message = '0xfeedbeef0x2'+str(self.Port)
-            self.gameServerUDP.sendto(bytes(message, 'utf8'), ( '172.1.0', 13117))
+            message = struct.pack('IbH', 0xfeedbeef, 0x2, port)
+            self.gameServerUDP.sendto(message, ( '172.1.0', 13117))
             time.sleep(1)
 
 
     def TCP_Connection(self):
-        while True:
+        stop_time = time.time() + 10
+        while time.time() < stop_time:
             try:
                 self.gameServerTCP.listen()
                 client, addr = self.gameServerTCP.accept()
                 teamNameEncoded, clientAddr  = client.recvfrom(1024)
                 teamNameDecoded = teamNameEncoded.decode()
                 print(teamNameEncoded)
-                a = ''
+                numOfPressed = 0
                 stop_time = time.time() + 10
                 while time.time() < stop_time:
                     keyPress, clientAddr  = client.recvfrom(1024)
-                    a += keyPress.decode()
+                    if len(keyPress) != 0:
+                        numOfPressed += 1
+                print(numOfPressed)
 
             except Exception as e:
                 print(e)
+
+    def getPlayers(self, player, playerAddr):
+
 
     def StartGame(self):
         stop_time = time.time() + 1000
