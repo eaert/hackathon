@@ -6,7 +6,7 @@ import threading
 HOST = '172.1.0.115'
 PORT = 2115
 
-GameOpenning = 'Welcome to Keyboard Spamming Battle Royale.\nGroup 1:\n=={}Group 2:\n=={}\nStart pressing keys on your keyboard as fast as you can!!'
+GameOpenning = 'Welcome to Keyboard Spamming Battle Royale.\nGroup 1:\n==\n{}\nGroup 2:\n==\n{}\nStart pressing keys on your keyboard as fast as you can!!'
 
 GameCloser = 'Game over!\n Group 1 typed in {} characters. Group 2 typed in {} characters.\n{} wins!\nCongratulations to the winners:\n==\n{}'
 
@@ -91,19 +91,23 @@ class GameServer:
                 Group2 += team[0]
         if len(self.players) > 0:
             try:
-                self.gameServerTCP.sendall((GameOpenning.format(Group1, Group2)).encode())
+                for player in self.players:
+                    self.gameServerTCP.sendall((GameOpenning.format(Group1, Group2)).encode(), player[1])
+                    # self.gameServerTCP.sendall('a'.encode())
             except Exception as e:
                 print(1)
                 print(e)
+                print(self.players)
             self.gameStarted = True
             self.gameTimer = time.time() + 10
             while self.gameStarted:
                 pass
             try:
-                self.gameServerTCP.sendall((GameCloser.format('a', 'b', 'c', Group1)).encode())
+                self.gameServerTCP.sendto((GameCloser.format('a', 'b', 'c', Group1)).encode(), player)
             except Exception as e:
                 print(2)
                 print(e)
+        self.players = {}
         self.broadcast(host, port)
 
 
@@ -127,7 +131,7 @@ class GameServer:
         teamNameEncoded = player.recv(1024)
         teamNameDecoded = teamNameEncoded.decode()
         self.dictLock.acquire()
-        self.players[player] = [teamNameDecoded, self.GroupNumber, 0]
+        self.players[playerAddr] = [teamNameDecoded, self.GroupNumber, 0]
         self.GroupNumber = (2 if self.GroupNumber == 1 else 1)
         self.dictLock.release()
         while not self.gameStarted:
