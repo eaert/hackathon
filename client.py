@@ -39,13 +39,12 @@ class GameClient:
 
         self.gameClientUDP.bind(('', 13117))
 
+        print("Client started, listening for offer requests...")
         self.gameClientTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         self.LookingForGame()
 
     def LookingForGame(self):
-        # self.gameClientTCP.bind((self.IP, self.Port))
-        print("Client started, listening for offer requests...")
         while True:
             data, addr = self.gameClientUDP.recvfrom(20)
             try:
@@ -56,26 +55,34 @@ class GameClient:
                 if message[0] != 0xfeedbeef:
                     continue
 
-                print("Received offer from %s, attempting to connect...", addr[0])
+                print("Received offer from {}, attempting to connect...".format(addr[0]))
                 # Data is good, moving to next Level
                 self.ConnectingToGame(addr[0], int(serverPort))
             except Exception as e:
+                print(e)
                 pass
             
 
     def ConnectingToGame(self, addr, gamePort):
         self.gameClientTCP.connect((addr, gamePort))
         self.gameClientTCP.sendall((self.teamName + '\n').encode())
+        data = None
+        while not data:
+            data = self.gameClientTCP.recv(1024)
+        print(data.decode())
         self.PlayGame()
         self.gameClientTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
     def PlayGame(self):
-        numberOfKeys = 0
         stop_time = time.time() + 10
         while time.time() < stop_time:
             char = getch.getch()
             self.gameClientTCP.sendall(char.encode())
+        data = None
+        while not data:
+            data = self.gameClientTCP.recv(1024)
+        print(data.decode())
 
 
 GameClient(HOST, PORT)
