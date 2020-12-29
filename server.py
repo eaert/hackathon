@@ -6,39 +6,37 @@ import threading
 HOST = '172.1.0.115'
 PORT = 2115
 
-GameOpenning = 'f{bcolors.OKBLUE}Welcome to Keyboard Spamming Battle Royale.\nGroup 1:\n==\n{}\nGroup 2:\n==\n{}\nStart pressing keys on your keyboard as fast as you can!!'
+CEND      = '\33[0m'
+CBOLD     = '\33[1m'
+CITALIC   = '\33[3m'
+CURL      = '\33[4m'
+CBLINK    = '\33[5m'
+CBLINK2   = '\33[6m'
+CSELECTED = '\33[7m'
 
-GameCloser = 'Game over!\n Group 1 typed in {} characters. Group 2 typed in {} characters.\n{} wins!\nCongratulations to the winners:\n==\n{}'
+CBLACK  = '\33[30m'
+CRED    = '\33[31m'
+CGREEN  = '\33[32m'
+CYELLOW = '\33[33m'
+CBLUE   = '\33[34m'
+CVIOLET = '\33[35m'
+CBEIGE  = '\33[36m'
+CWHITE  = '\33[37m'
+CCYAN   = '\033[36m'
+CORANGE  = '\033[33m'
 
-# # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-# #     s.bind((HOST, PORT))
-# #     s.listen()
-# #     print('Server started, listening on IP address {}'.format(HOST))
-# #     conn, addr = s.accept()
-# #     with conn:
-# #         print('Connected by', addr)
-# #         while True:
-# #             data = conn.recv(1024)
-# #             if not data:
-# #                 break
-# #             conn.sendall(data)
+CGREY    = '\33[90m'
+CRED2    = '\33[91m'
+CGREEN2  = '\33[92m'
+CYELLOW2 = '\33[93m'
+CBLUE2   = '\33[94m'
+CVIOLET2 = '\33[95m'
+CBEIGE2  = '\33[96m'
+CWHITE2  = '\33[97m'
 
-# server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+GameOpenning = f'{CCYAN}{CBOLD}{CITALIC}Welcome to Keyboard Spamming Battle Royale.{CEND}' + f'{CBLUE}{CITALIC}\nGroup 1:\n==\n%s{CEND}' + f'{CYELLOW}{CITALIC}\nGroup 2:\n==\n%s{CEND}' + f'{CRED}\nStart pressing keys on your keyboard as fast as you can!!{CEND}'
 
-# server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-
-# # Enable broadcasting mode
-# server.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-
-# # Set a timeout so the socket does not block
-# # indefinitely when trying to receive data.
-# server.settimeout(0.2)
-
-# message = b"Come Fight Me ! I'll beat you, then will go to buy new keyboard."
-# while True:
-#     server.sendto(message, (HOST, PORT))
-#     print('Server started, listening on IP address {}'.format(HOST))
-#     time.sleep(1)
+GameCloser = f'{CORANGE}{CBOLD}{CITALIC}{CSELECTED}Game over!\n{CEND}' + f'{CBLUE}{CITALIC}Group 1 typed in %d characters.\n{CEND}' + f'{CYELLOW}{CITALIC}Group 2 typed in %d characters.\n{CEND}' + f'{CORANGE}{CBOLD}%s wins!\nCongratulations to the winners:\n==\n%s{CEND}'
 
 class GameServer:
 
@@ -92,7 +90,7 @@ class GameServer:
         if len(self.players) > 0:
             try:
                 for player in self.players:
-                    player.sendall((GameOpenning.format(Group1, Group2)).encode())
+                    player.sendall((GameOpenning %(Group1, Group2)).encode())
             except:
                 pass
             self.gameStarted = True
@@ -118,9 +116,9 @@ class GameServer:
                     Winner = 'Tie'
                     WinnerTeams = 'None'
                 for player in self.players:
-                    player.sendall((GameCloser.format(str(Group1_Score), str(Group2_Score), Winner, WinnerTeams)).encode())
-            except Exception as e:
-                print(e)
+                    player.sendall((GameCloser %(Group1_Score, Group2_Score, Winner, WinnerTeams)).encode())
+            except:
+                pass
         self.players = {}
         self.broadcast(host, port)
 
@@ -153,7 +151,6 @@ class GameServer:
             player.recv(1024)
             pass
         self.StartGame(player)
-        print('Dolev kill the server')
 
     def StartGame(self, player):
         while time.time() < self.gameTimer:
@@ -161,29 +158,9 @@ class GameServer:
             try:
                 keyPress = player.recv(1024)
                 self.players[player][2] += len(keyPress.decode())
-                if len(keyPress.decode()) != 0:
-                    print(len(keyPress.decode()))
             except:
                 pass
-        print('done')
-
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-
-    def disable(self):
-        self.HEADER = ''
-        self.OKBLUE = ''
-        self.OKGREEN = ''
-        self.WARNING = ''
-        self.FAIL = ''
-        self.ENDC = ''
 
 
 GameServer(HOST, PORT)
-        
-    
+            

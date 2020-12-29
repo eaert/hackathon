@@ -51,8 +51,7 @@ class GameClient:
                 print("Received offer from {}, attempting to connect...".format(addr[0]))
                 # Data is good, moving to next Level
                 self.ConnectingToGame(addr[0], int(serverPort))
-            except Exception as e:
-                print(e)
+            except:
                 pass
             
 
