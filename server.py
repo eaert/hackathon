@@ -6,7 +6,7 @@ import threading
 HOST = '172.1.0.115'
 PORT = 2115
 
-GameOpenning = 'Welcome to Keyboard Spamming Battle Royale.\nGroup 1:\n==\n{}\nGroup 2:\n==\n{}\nStart pressing keys on your keyboard as fast as you can!!'
+GameOpenning = 'f{bcolors.OKBLUE}Welcome to Keyboard Spamming Battle Royale.\nGroup 1:\n==\n{}\nGroup 2:\n==\n{}\nStart pressing keys on your keyboard as fast as you can!!'
 
 GameCloser = 'Game over!\n Group 1 typed in {} characters. Group 2 typed in {} characters.\n{} wins!\nCongratulations to the winners:\n==\n{}'
 
@@ -92,20 +92,34 @@ class GameServer:
         if len(self.players) > 0:
             try:
                 for player in self.players:
-                    self.gameServerTCP.sendall((GameOpenning.format(Group1, Group2)).encode(), player[1])
-                    # self.gameServerTCP.sendall('a'.encode())
-            except Exception as e:
-                print(1)
-                print(e)
-                print(self.players)
+                    player.sendall((GameOpenning.format(Group1, Group2)).encode())
+            except:
+                pass
             self.gameStarted = True
             self.gameTimer = time.time() + 10
             while self.gameStarted:
                 pass
             try:
-                self.gameServerTCP.sendto((GameCloser.format('a', 'b', 'c', Group1)).encode(), player)
+                Group1_Score = 0
+                Group2_Score = 0
+                for player in self.players:
+                    team = self.players[player]
+                    if team[1] == 1:
+                        Group1_Score += team[2]
+                    else:
+                        Group2_Score += team[2]
+                if Group1_Score > Group2_Score:
+                    Winner = 'Group1'
+                    WinnerTeams = Group1
+                elif Group2_Score > Group1_Score:
+                    Winner = 'Group2'
+                    WinnerTeams = Group2
+                else:
+                    Winner = 'Tie'
+                    WinnerTeams = 'None'
+                for player in self.players:
+                    player.sendall((GameCloser.format(str(Group1_Score), str(Group2_Score), Winner, WinnerTeams)).encode())
             except Exception as e:
-                print(2)
                 print(e)
         self.players = {}
         self.broadcast(host, port)
@@ -114,14 +128,15 @@ class GameServer:
     def TCP_Connection(self):
         threads = []
         while not self.gameStarted:
+            self.gameServerTCP.settimeout(1.1)
             try:
                 self.gameServerTCP.listen()
                 client, addr = self.gameServerTCP.accept()
                 t = threading.Thread(target=self.getPlayers, args=(client, addr))
                 threads.append(t)
                 t.start()
-            except Exception as e:
-                print(e)
+            except:
+                pass
         for thread in threads:
             thread.join()
         self.gameStarted = False
@@ -131,17 +146,18 @@ class GameServer:
         teamNameEncoded = player.recv(1024)
         teamNameDecoded = teamNameEncoded.decode()
         self.dictLock.acquire()
-        self.players[playerAddr] = [teamNameDecoded, self.GroupNumber, 0]
+        self.players[player] = [teamNameDecoded, self.GroupNumber, 0]
         self.GroupNumber = (2 if self.GroupNumber == 1 else 1)
         self.dictLock.release()
         while not self.gameStarted:
             player.recv(1024)
             pass
         self.StartGame(player)
+        print('Dolev kill the server')
 
     def StartGame(self, player):
         while time.time() < self.gameTimer:
-            player.settimeout(self.gameTimer - time.time() if self.gameTimer - time.time() > 0 else 0)
+            # player.settimeout(self.gameTimer - time.time() if self.gameTimer - time.time() > 0 else 0)
             try:
                 keyPress = player.recv(1024)
                 self.players[player][2] += len(keyPress.decode())
@@ -149,8 +165,24 @@ class GameServer:
                     print(len(keyPress.decode()))
             except:
                 pass
+        print('done')
 
-    
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+
+    def disable(self):
+        self.HEADER = ''
+        self.OKBLUE = ''
+        self.OKGREEN = ''
+        self.WARNING = ''
+        self.FAIL = ''
+        self.ENDC = ''
+
 
 GameServer(HOST, PORT)
         
