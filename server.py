@@ -166,6 +166,8 @@ class GameServer:
                     player.close()
             except:
                 pass
+        else:
+            print("No Players after 10 secs, Let's try agian")
         # Reset the players dict
         self.players = {}
         # Collect new Players thro broadcast

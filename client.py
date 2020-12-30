@@ -27,7 +27,7 @@ class GameClient:
         if TEST:
             self.gameClientUDP.bind(('172.99.0', 13117))
         else:
-            self.gameClientUDP.bind(('0.0.0.0', 13117))
+            self.gameClientUDP.bind(('172.1.0', 13117))
 
         print("Client started, listening for offer requests...")
         
