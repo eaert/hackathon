@@ -4,6 +4,10 @@ import struct
 import multiprocessing
 import getch
     
+CBOLD     = '\33[1m'
+CGREY     = '\33[90m'
+CSELECTED = '\33[7m'
+CEND      = '\33[0m'
 
 class GameClient:
 
@@ -85,14 +89,15 @@ class GameClient:
             except:
                 pass
             if data is None:
-                print('No Welcome Message has been received. Lets try to play anyway.')
+                print(f'{CBOLD}{CGREY}{CSELECTED}No Welcome Message has been received. Lets find new Server.{CEND}')
+                raise Exception('Connected Server sucks.')
             else:
                 print(data.decode())
             # Start the game !
             self.PlayGame()
             print('Server disconnected, listening for offer requests...')
-        except Exception as e:
-            print(e)
+        except:
+            pass
         self.gameClientTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
@@ -118,7 +123,7 @@ class GameClient:
         except:
             pass
         if data is None:
-            print("No GameOver Message, but it's over..")
+            print(f"{CBOLD}{CGREY}{CSELECTED}No GameOver Message, but it's over..{CEND}")
         else:
             print(data.decode())
 
