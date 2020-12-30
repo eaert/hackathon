@@ -3,9 +3,8 @@ import time
 import struct
 import threading
 import multiprocessing
+from scapy.all import get_if_addr
 
-
-HOST = '172.1.0.115'
 PORT = 2115
 
 CEND      = '\33[0m'
@@ -42,24 +41,24 @@ GameCloser = f'{CORANGE}{CBOLD}{CITALIC}{CSELECTED}Game over!\n{CEND}' + f'{CBLU
 
 class GameServer:
 
-    def __init__(self, IP, PORT, TEST):
+    def __init__(self, PORT, TEST):
         """
         Constractor for GameServer
 
         Parameters:
-            IP (str): Server IP Address
             PORT (int): Server Port
             TEST (boolean): Run on Test server or Div server
         """
 
-        self.IP = IP
         self.Port = PORT
 
         if TEST:
+            self.IP = get_if_addr('eth2')
             self.broadcastAddr = '172.99.0'
         else:
+            self.IP = get_if_addr('eth1')
             self.broadcastAddr = '172.1.0'
-
+        
         # Let the Server know the game start or over
         self.gameStarted = False
         # Game Timer (10 secs) for the players to send keypresses
@@ -84,10 +83,10 @@ class GameServer:
         # Initiate server TCP socket
         self.gameServerTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # Bind to the Addr and Port
-        self.gameServerTCP.bind((HOST, PORT))
+        self.gameServerTCP.bind((self.IP, PORT))
 
         # Initiate server broadcasting Thread
-        print('Server started, listening on IP address {}'.format(HOST))
+        print('Server started, listening on IP address {}'.format(self.IP))
         tB = threading.Thread(target=self.broadcast, args=(self.IP, self.Port))
 
         # Initiate server players collector Thread
@@ -199,7 +198,7 @@ class GameServer:
             thread.join()
         # Game over, letting the other functions know and send the details it need to
         self.gameStarted = False
-        print('“Game over, sending out offer requests...”')
+        print('Game over, sending out offer requests...')
         # Start collecting Players agian
         self.TCP_Connection()
 
@@ -252,6 +251,5 @@ class GameServer:
             except:
                 pass
 
-
-GameServer(HOST, PORT, False)
+GameServer(PORT, False)
             
