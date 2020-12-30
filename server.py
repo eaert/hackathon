@@ -2,6 +2,8 @@ import socket
 import time
 import struct
 import threading
+import multiprocessing
+
 
 HOST = '172.1.0.115'
 PORT = 2115
@@ -34,9 +36,9 @@ CVIOLET2 = '\33[95m'
 CBEIGE2  = '\33[96m'
 CWHITE2  = '\33[97m'
 
-GameOpenning = f'{CCYAN}{CBOLD}{CITALIC}Welcome to Who will Break his Keyboard first !?{CEND}' + f'{CBLUE}{CITALIC}\nGroup 1:\n==\n%s{CEND}' + f'{CYELLOW}{CITALIC}\nGroup 2:\n==\n%s{CEND}' + f'{CRED}\nStart pressing keys on your keyboard as fast as you can!!{CEND}'
+GameOpenning = f'{CCYAN}{CBOLD}{CITALIC}Welcome to Who will Break his Keyboard first !?{CEND}' + f'{CBLUE}{CITALIC}\nGroup 1:\n==\n%s{CEND}' + f'{CGREEN}{CITALIC}\nGroup 2:\n==\n%s{CEND}' + f'{CRED}\nStart pressing keys on your keyboard as fast as you can!!{CEND}'
 
-GameCloser = f'{CORANGE}{CBOLD}{CITALIC}{CSELECTED}Game over!\n{CEND}' + f'{CBLUE}{CITALIC}Group 1 typed in %d characters.\n{CEND}' + f'{CYELLOW}{CITALIC}Group 2 typed in %d characters.\n{CEND}' + f'{CORANGE}{CBOLD}%s wins!\nCongratulations to the winners:\n==\n%s{CEND}'
+GameCloser = f'{CORANGE}{CBOLD}{CITALIC}{CSELECTED}Game over!\n{CEND}' + f'{CBLUE}{CITALIC}Group 1 typed in %d characters.\n{CEND}' + f'{CGREEN}{CITALIC}Group 2 typed in %d characters.\n{CEND}' + f'{CORANGE}{CBOLD}%s!\nCongratulations to the winners!\nThe following up Teams will need new Keyboard:\n==\n%s{CEND}'
 
 class GameServer:
 
@@ -150,10 +152,10 @@ class GameServer:
                     else:
                         Group2_Score += team[2]
                 if Group1_Score > Group2_Score:
-                    Winner = 'Group1'
+                    Winner = 'Group1 Wins!'
                     WinnerTeams = Group1
                 elif Group2_Score > Group1_Score:
-                    Winner = 'Group2'
+                    Winner = 'Group2 Wins'
                     WinnerTeams = Group2
                 else:
                     Winner = 'Tie'
@@ -164,7 +166,6 @@ class GameServer:
                     player.close()
             except:
                 pass
-        print('reset')
         # Reset the players dict
         self.players = {}
         # Collect new Players thro broadcast
@@ -181,7 +182,7 @@ class GameServer:
         threads = []
         while not self.gameStarted:
             # Waiting 1.1 sec for late players
-            self.gameServerTCP.settimeout(1.1)
+            self.gameServerTCP.settimeout(1.5)
             try:
                 self.gameServerTCP.listen()
                 client, addr = self.gameServerTCP.accept()
@@ -208,22 +209,28 @@ class GameServer:
             player (socket): Player socket
             playerAddr (str): Player Addr
         """
-        # Getting the player Team Name
-        teamNameEncoded = player.recv(1024)
-        teamNameDecoded = teamNameEncoded.decode()
-        # Saving the Player into the dict
-        self.dictLock.acquire()
-        self.players[player] = [teamNameDecoded, self.GroupNumber, 0]
-        self.GroupNumber = (2 if self.GroupNumber == 1 else 1)
-        self.dictLock.release()
-        # Waiting for the game to Start
-        while not self.gameStarted:
-            try:
-                player.recv(1024)
-            except:
-                pass
+        try:
+            # Players had 3 secs to send their Team Name
+            player.settimeout(3)
+            # Getting the player Team Name
+            teamNameEncoded = player.recv(1024)
+            teamNameDecoded = teamNameEncoded.decode()
+            # Saving the Player into the dict
+            self.dictLock.acquire()
+            self.players[player] = [teamNameDecoded, self.GroupNumber, 0]
+            self.GroupNumber = (2 if self.GroupNumber == 1 else 1)
+            self.dictLock.release()
+            # Waiting for the game to Start
+            while not self.gameStarted:
+                try:
+                    player.recv(1024)
+                except:
+                    pass
+        except:
+            return
         # Starting the Game
         self.StartGame(player)
+
 
     def StartGame(self, player):
         """
@@ -233,6 +240,8 @@ class GameServer:
         Parameters:
             player (socket): Player socket
         """
+        # After game over making sure we don't stack in loop
+        player.settimeout(1)
         while time.time() < self.gameTimer:
             try:
                 keyPress = player.recv(1024)

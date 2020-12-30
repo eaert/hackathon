@@ -1,7 +1,7 @@
 import socket
 import time
 import struct
-import threading
+import multiprocessing
 import getch
     
 
@@ -43,9 +43,10 @@ class GameClient:
         """
         # Always working, our client is a Hard working one
         while True:
-            # Get the broadcast message
-            data, addr = self.gameClientUDP.recvfrom(20)
+            self.gameClientUDP.settimeout(1)
             try:
+                # Get the broadcast message
+                data, addr = self.gameClientUDP.recvfrom(20)
                 # Unpacking the broadcast message
                 message = struct.unpack('IbH', data)
                 # Getting the server Port
@@ -59,8 +60,8 @@ class GameClient:
                 print("Received offer from {}, attempting to connect...".format(addr[0]))
                 # Data is good, connecting to the server
                 self.ConnectingToGame(addr[0], int(serverPort))
-            except:
-                pass
+            except Exception as e:
+                print(e)
             
 
     def ConnectingToGame(self, addr, gamePort):
@@ -77,9 +78,14 @@ class GameClient:
         self.gameClientTCP.sendall((self.teamName + '\n').encode())
         # Waiting for openning message
         data = None
-        while not data:
+        try:
             data = self.gameClientTCP.recv(1024)
-        print(data.decode())
+        except:
+            data = 'No Welcome Message has been received. Lets try to play anyway.'
+        if isinstance(data, str):
+            print(data)
+        else:
+            print(data.decode())
         # Start the game !
         self.PlayGame()
         print('Server disconnected, listening for offer requests...')
@@ -92,17 +98,21 @@ class GameClient:
         Press as many keyboard keys as you can in 10 secs !
         """
         # Initiate PressKeys Thread
-        t = threading.Thread(target=self.PressKeys, args=())
+        tPressKeys = multiprocessing.Process(target=self.PressKeys)
         # Start the Thread
-        t.start()
+        tPressKeys.start()
         # Give the Thread 10 secs to live
-        t.join(10)
-        # Waiting 1 sec for GameOver message
+        tPressKeys.join(10)
+        if tPressKeys.is_alive():
+            tPressKeys.terminate()
+        # Waiting 2 sec for GameOver message
+        self.gameClientTCP.settimeout(2)
         data = None
-        stop_time = time.time() + 3
         # Getting the GameOver Message or if time pass moving on
-        while not data and time.time() < stop_time:
+        try:
             data = self.gameClientTCP.recv(1024)
+        except:
+            pass
         if data is not None:
             print(data.decode())
 
@@ -114,5 +124,6 @@ class GameClient:
             char = getch.getch()
             # Sending it to the Server
             self.gameClientTCP.sendall(char.encode())
+
 
 GameClient(False)
