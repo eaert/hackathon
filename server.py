@@ -54,10 +54,10 @@ class GameServer:
 
         if TEST:
             self.IP = get_if_addr('eth2')
-            self.broadcastAddr = '172.99.0'
+            self.broadcastAddr = '172.99.255.255'
         else:
             self.IP = get_if_addr('eth1')
-            self.broadcastAddr = '172.1.0'
+            self.broadcastAddr = '172.1.255.255'
         
         # Let the Server know the game start or over
         self.gameStarted = False
@@ -87,16 +87,20 @@ class GameServer:
 
         # Initiate server broadcasting Thread
         print('Server started, listening on IP address {}'.format(self.IP))
-        tB = threading.Thread(target=self.broadcast, args=(self.IP, self.Port))
+        self.tB = threading.Thread(target=self.broadcast, args=(self.IP, self.Port))
 
         # Initiate server players collector Thread
-        tC = threading.Thread(target=self.TCP_Connection, args=())
+        self.tC = threading.Thread(target=self.TCP_Connection, args=())
 
-        tB.start()
-        tC.start()
+        self.eB = threading.Semaphore()
+        self.eC = threading.Semaphore()
+        self.sPlayers = {}
 
-        tB.join()
-        tC.join()
+        self.tB.start()
+        self.tC.start()
+
+        self.tB.join()
+        self.tC.join()
 
 
     def broadcast(self, host, port):
@@ -113,7 +117,7 @@ class GameServer:
         stop_time = time.time() + 10
         while time.time() < stop_time:
             # Packing the message to be sent
-            message = struct.pack('IbH', 0xfeedbeef, 0x2, port)
+            message = struct.pack('Ibh', 0xfeedbeef, 0x2, port)
             self.gameServerUDP.sendto(message, (self.broadcastAddr, 13117))
             time.sleep(1)
 
@@ -126,7 +130,7 @@ class GameServer:
                 Group1 += team[0]
             else:
                 Group2 += team[0]
-        if len(self.players) > 0:
+        if len(self.players) > 1:
             try:
                 # Sending a Welcome message to each player
                 for player in self.players:
@@ -135,11 +139,13 @@ class GameServer:
                 pass
             # Initiate the Game
             self.gameStarted = True
+            for key in self.sPlayers.keys():
+                self.eC.release()
             # Initiate Game Timer
             self.gameTimer = time.time() + 10
             # Waiting until the game will finish
             while self.gameStarted:
-                pass
+                self.eB.acquire()
             # Counting the scores and decide the Winner !
             try:
                 Group1_Score = 0
@@ -182,6 +188,8 @@ class GameServer:
         # Each player will get his own thread, which will count the details for him preformance
         threads = []
         while not self.gameStarted:
+            if len(threads) > 10:
+                continue
             # Waiting 1.1 sec for late players
             self.gameServerTCP.settimeout(1.5)
             try:
@@ -190,6 +198,7 @@ class GameServer:
                 # Initiate Thread for each player
                 t = threading.Thread(target=self.getPlayers, args=(client, addr))
                 threads.append(t)
+                self.sPlayers[client] = threading.Semaphore()
                 t.start()
             except:
                 pass
@@ -198,6 +207,7 @@ class GameServer:
             thread.join()
         # Game over, letting the other functions know and send the details it need to
         self.gameStarted = False
+        self.eB.release()
         print('Game over, sending out offer requests...')
         # Start collecting Players agian
         self.TCP_Connection()
@@ -222,11 +232,12 @@ class GameServer:
             self.GroupNumber = (2 if self.GroupNumber == 1 else 1)
             self.dictLock.release()
             # Waiting for the game to Start
-            while not self.gameStarted:
-                try:
-                    player.recv(1024)
-                except:
-                    pass
+            self.eC.acquire()
+            # while not self.gameStarted:
+            #     try:
+            #         player.recv(1024)
+            #     except:
+            #         pass
         except:
             return
         # Starting the Game

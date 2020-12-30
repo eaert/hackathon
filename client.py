@@ -29,9 +29,9 @@ class GameClient:
         self.gameClientUDP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 
         if TEST:
-            self.gameClientUDP.bind(('172.99.0', 13117))
+            self.gameClientUDP.bind(('172.99.255.255', 13117))
         else:
-            self.gameClientUDP.bind(('172.1.0', 13117))
+            self.gameClientUDP.bind(('172.1.255.255', 13117))
 
         print("Client started, listening for offer requests...")
         
@@ -47,12 +47,12 @@ class GameClient:
         """
         # Always working, our client is a Hard working one
         while True:
-            self.gameClientUDP.settimeout(1)
+            self.gameClientUDP.settimeout(2)
             try:
                 # Get the broadcast message
-                data, addr = self.gameClientUDP.recvfrom(20)
+                data, addr = self.gameClientUDP.recvfrom(8)
                 # Unpacking the broadcast message
-                message = struct.unpack('IbH', data)
+                message = struct.unpack('Ibh', data)
                 # Getting the server Port
                 serverPort = message[2]
 
