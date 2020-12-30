@@ -117,7 +117,7 @@ class GameServer:
         stop_time = time.time() + 10
         while time.time() < stop_time:
             # Packing the message to be sent
-            message = struct.pack('Ibh', 0xfeedbeef, 0x2, port)
+            message = struct.pack('IbH', 0xfeedbeef, 0x2, port)
             self.gameServerUDP.sendto(message, (self.broadcastAddr, 13117))
             time.sleep(1)
 

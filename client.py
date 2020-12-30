@@ -52,7 +52,7 @@ class GameClient:
                 # Get the broadcast message
                 data, addr = self.gameClientUDP.recvfrom(8)
                 # Unpacking the broadcast message
-                message = struct.unpack('Ibh', data)
+                message = struct.unpack('IbH', data)
                 # Getting the server Port
                 serverPort = message[2]
 
