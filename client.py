@@ -140,4 +140,4 @@ class GameClient:
                 pass
 
 
-GameClient(False)
+GameClient(True)

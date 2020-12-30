@@ -130,7 +130,7 @@ class GameServer:
                 Group1 += team[0]
             else:
                 Group2 += team[0]
-        if len(self.players) > 1:
+        if len(self.players) > 0:
             try:
                 # Sending a Welcome message to each player
                 for player in self.players:
@@ -262,5 +262,5 @@ class GameServer:
             except:
                 pass
 
-GameServer(PORT, False)
+GameServer(PORT, True)
             
