@@ -27,7 +27,7 @@ class GameClient:
         if TEST:
             self.gameClientUDP.bind(('172.99.0', 13117))
         else:
-            self.gameClientUDP.bind(('172.1.0', 13117))
+            self.gameClientUDP.bind(('0.0.0.0', 13117))
 
         print("Client started, listening for offer requests...")
         
@@ -60,8 +60,8 @@ class GameClient:
                 print("Received offer from {}, attempting to connect...".format(addr[0]))
                 # Data is good, connecting to the server
                 self.ConnectingToGame(addr[0], int(serverPort))
-            except Exception as e:
-                print(e)
+            except:
+                pass
             
 
     def ConnectingToGame(self, addr, gamePort):
@@ -72,23 +72,27 @@ class GameClient:
             addr (str): Game Server addr
             gamePort (int): Game Server Port
         """
-        # Connecting to the TCP Game Server
-        self.gameClientTCP.connect((addr, gamePort))
-        # Sending to the Server our Team Name
-        self.gameClientTCP.sendall((self.teamName + '\n').encode())
-        # Waiting for openning message
-        data = None
         try:
-            data = self.gameClientTCP.recv(1024)
-        except:
-            data = 'No Welcome Message has been received. Lets try to play anyway.'
-        if isinstance(data, str):
-            print(data)
-        else:
-            print(data.decode())
-        # Start the game !
-        self.PlayGame()
-        print('Server disconnected, listening for offer requests...')
+            self.gameClientTCP.settimeout(10)
+            # Connecting to the TCP Game Server
+            self.gameClientTCP.connect((addr, gamePort))
+            # Sending to the Server our Team Name
+            self.gameClientTCP.sendall((self.teamName + '\n').encode())
+            # Waiting for openning message
+            data = None
+            try:
+                data = self.gameClientTCP.recv(1024)
+            except:
+                pass
+            if data is None:
+                print('No Welcome Message has been received. Lets try to play anyway.')
+            else:
+                print(data.decode())
+            # Start the game !
+            self.PlayGame()
+            print('Server disconnected, listening for offer requests...')
+        except Exception as e:
+            print(e)
         self.gameClientTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
@@ -113,17 +117,22 @@ class GameClient:
             data = self.gameClientTCP.recv(1024)
         except:
             pass
-        if data is not None:
+        if data is None:
+            print("No GameOver Message, but it's over..")
+        else:
             print(data.decode())
 
     def PressKeys(self):
         # 10 secs to press, GO GO GO !
         stop_time = time.time() + 10
         while time.time() < stop_time:
-            # Getting the pressed key
-            char = getch.getch()
-            # Sending it to the Server
-            self.gameClientTCP.sendall(char.encode())
+            try:
+                # Getting the pressed key
+                char = getch.getch()
+                # Sending it to the Server
+                self.gameClientTCP.sendall(char.encode())
+            except:
+                pass
 
 
 GameClient(False)
