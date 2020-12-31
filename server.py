@@ -59,7 +59,7 @@ class GameServer:
         
         # Let the Server know the game start or over
         self.gameStarted = False
-        # Game Timer (10 secs) for the players to send keypresses
+        # Game Timer (10 secs) until the game will start
         self.timeToStart = 0
         # Collecting the players into Dict
         self.players = {}
@@ -90,9 +90,8 @@ class GameServer:
         # Initiate server players collector Thread
         self.tC = threading.Thread(target=self.TCP_Connection, args=())
 
-        self.eB = threading.Semaphore()
-        self.eC = threading.Semaphore()
-        self.sPlayers = {}
+        # Semaphore to control the flowing of clients
+        self.sT = threading.Semaphore()
 
         self.tB.start()
         self.tC.start()
@@ -132,7 +131,11 @@ class GameServer:
             try:
                 # Sending a Welcome message to each player
                 for player in self.players:
-                    player.sendall((GameOpenning %(Group1, Group2)).encode())
+                    try:
+                        player.sendall((GameOpenning %(Group1, Group2)).encode())
+                    except:
+                        # If you didn't manage to send a Welcome message remove the player from the playing field
+                        self.players.popitem(player)
             except:
                 pass
             # Initiate the Game
@@ -160,8 +163,11 @@ class GameServer:
                     WinnerTeams = 'None'
                     # Send all players the Game Details
                 for player in self.players:
-                    player.sendall((GameCloser %(Group1_Score, Group2_Score, Winner, WinnerTeams)).encode())
-                    player.close()
+                    try:
+                        player.sendall((GameCloser %(Group1_Score, Group2_Score, Winner, WinnerTeams)).encode())
+                        player.close()
+                    except:
+                        pass
                 print('Game over, sending out offer requests...')
             except:
                 pass
@@ -170,7 +176,9 @@ class GameServer:
         # Reset the players dict
         self.players = {}
         # Collect new Players thro broadcast
+        self.sT.release()
         self.broadcast(host, port)
+
 
 
     def TCP_Connection(self):
@@ -201,7 +209,9 @@ class GameServer:
         # Game over, letting the other functions know and send the details it need to
         self.gameStarted = False
         # Start collecting Players agian
+        self.sT.acquire()
         self.TCP_Connection()
+
 
     def getPlayers(self, player, playerAddr):
         """
@@ -223,7 +233,6 @@ class GameServer:
             self.GroupNumber = (2 if self.GroupNumber == 1 else 1)
             self.dictLock.release()
             # Waiting for the game to Start
-            # self.eC.acquire()
             time.sleep(self.timeToStart - time.time())
         except:
             return
