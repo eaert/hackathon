@@ -114,8 +114,8 @@ class GameClient:
         tPressKeys.join(10)
         if tPressKeys.is_alive():
             tPressKeys.terminate()
-        # Waiting 2 sec for GameOver message
-        self.gameClientTCP.settimeout(2)
+        # Waiting 3 sec for GameOver message
+        self.gameClientTCP.settimeout(3)
         data = None
         # Getting the GameOver Message or if time pass moving on
         try:
@@ -140,4 +140,4 @@ class GameClient:
                 pass
 
 
-GameClient(True)
+GameClient(False)

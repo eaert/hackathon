@@ -5,8 +5,6 @@ import threading
 import multiprocessing
 from scapy.all import get_if_addr
 
-PORT = 2115
-
 CEND      = '\33[0m'
 CBOLD     = '\33[1m'
 CITALIC   = '\33[3m'
@@ -62,7 +60,7 @@ class GameServer:
         # Let the Server know the game start or over
         self.gameStarted = False
         # Game Timer (10 secs) for the players to send keypresses
-        self.gameTimer = 0
+        self.timeToStart = 0
         # Collecting the players into Dict
         self.players = {}
         # Lock in order to write into the dict
@@ -114,8 +112,8 @@ class GameServer:
             PORT (int): Server Port
         """
         # Sending broadcast message every 1 sec for 10 secs
-        stop_time = time.time() + 10
-        while time.time() < stop_time:
+        self.timeToStart = time.time() + 10
+        while time.time() < self.timeToStart:
             # Packing the message to be sent
             message = struct.pack('IbH', 0xfeedbeef, 0x2, port)
             self.gameServerUDP.sendto(message, (self.broadcastAddr, 13117))
@@ -139,13 +137,8 @@ class GameServer:
                 pass
             # Initiate the Game
             self.gameStarted = True
-            for key in self.sPlayers.keys():
-                self.eC.release()
-            # Initiate Game Timer
-            self.gameTimer = time.time() + 10
             # Waiting until the game will finish
-            while self.gameStarted:
-                self.eB.acquire()
+            time.sleep(11)
             # Counting the scores and decide the Winner !
             try:
                 Group1_Score = 0
@@ -169,6 +162,7 @@ class GameServer:
                 for player in self.players:
                     player.sendall((GameCloser %(Group1_Score, Group2_Score, Winner, WinnerTeams)).encode())
                     player.close()
+                print('Game over, sending out offer requests...')
             except:
                 pass
         else:
@@ -198,7 +192,6 @@ class GameServer:
                 # Initiate Thread for each player
                 t = threading.Thread(target=self.getPlayers, args=(client, addr))
                 threads.append(t)
-                self.sPlayers[client] = threading.Semaphore()
                 t.start()
             except:
                 pass
@@ -207,8 +200,6 @@ class GameServer:
             thread.join()
         # Game over, letting the other functions know and send the details it need to
         self.gameStarted = False
-        self.eB.release()
-        print('Game over, sending out offer requests...')
         # Start collecting Players agian
         self.TCP_Connection()
 
@@ -232,12 +223,8 @@ class GameServer:
             self.GroupNumber = (2 if self.GroupNumber == 1 else 1)
             self.dictLock.release()
             # Waiting for the game to Start
-            self.eC.acquire()
-            # while not self.gameStarted:
-            #     try:
-            #         player.recv(1024)
-            #     except:
-            #         pass
+            # self.eC.acquire()
+            time.sleep(self.timeToStart - time.time())
         except:
             return
         # Starting the Game
@@ -253,8 +240,9 @@ class GameServer:
             player (socket): Player socket
         """
         # After game over making sure we don't stack in loop
+        stop_time = time.time() + 10
         player.settimeout(1)
-        while time.time() < self.gameTimer:
+        while time.time() < stop_time:
             try:
                 keyPress = player.recv(1024)
                 # Adding the messages to his score - in the dict
@@ -262,5 +250,8 @@ class GameServer:
             except:
                 pass
 
-GameServer(PORT, True)
+PORT = 2115
+HOST = None
+
+GameServer(PORT, False)
             
